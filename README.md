@@ -3,7 +3,7 @@
 1. 第一部分是定时从一些网站上爬取IP，做简单的验证，将验证通过的IP保存到数据库中；  
 2. 第二部分是定时对数据库中已保存的IP进行测试，通过给每个IP进行打分的形式保留打分最高的IP作为最终的IP；  
 ***将这两个过程写成两个脚本，制作一个定时任务部署到服务器上即可，如果需要使用ip池，以后只要每次从数据库中捞就行了***
-具体实现代码可见[个人github仓库：https://github.com/Greybeetle/ProxyPool](https://github.com/Greybeetle/ProxyPool)，有需要的可以参考
+具体实现代码可见[个人github仓库：https://github.com/Greybeetle/ProxyPool](https://github.com/Greybeetle/ProxyPool)，有需要的可以参考，个人博客地址为：http://121.199.57.49:4000/
 
 # IP爬取过程
 ## 基础IP爬取
