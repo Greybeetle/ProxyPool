@@ -3,6 +3,7 @@
 1. 第一部分是定时从一些网站上爬取IP，做简单的验证，将验证通过的IP保存到数据库中；  
 2. 第二部分是定时对数据库中已保存的IP进行测试，通过给每个IP进行打分的形式保留打分最高的IP作为最终的IP；  
 ***将这两个过程写成两个脚本，制作一个定时任务部署到服务器上即可，如果需要使用ip池，以后只要每次从数据库中捞就行了***
+具体实现代码可见[个人github仓库：https://github.com/Greybeetle/ProxyPool](https://github.com/Greybeetle/ProxyPool)，有需要的可以参考
 
 # IP爬取过程
 ## 基础IP爬取
@@ -212,3 +213,32 @@ def modify_score(ip, success, response_time):
             cursor.close()
             conn.close()
 ```
+3. 经过这样的打分之后将更新数据库中的数据，同时为了保证数据库中IP不太多，每次检测完之后判断一下数据库中的IP数量，如果数量超过设定的最大数量，则删除评分较低的IP，删除代码如下：
+```python
+# 删除分数较低的ip，只保留max_num_ip条纪录
+sql = "delete from %s where content not in (select content from (select content from (select content from %s order by score desc) tt limit %i) ss);" % (cfg.TABLE_NAME, cfg.TABLE_NAME, cfg.max_ip_num)
+cursor.execute(sql)
+conn.commit()
+```
+到这里，爬虫和打分两个过程都结束了，下面说一下在服务器上的部署；
+# 项目部署
+## 项目定时
+主要思路是使用BlockingScheduler对两个脚本设置定时任务，其中爬取ip的脚本我设置的是每天0点爬一次，关于更多的定时任务的知识请移步我的其他博客。
+```python
+scheduler = BlockingScheduler()
+scheduler.add_job(job, 'cron', hour=0, minute=0, second=0)
+scheduler.start()
+```
+而检测的脚本设置的是每6小时检测一次
+```python
+scheduler = BlockingScheduler()
+scheduler.add_job(job, 'interval', hours=6)
+scheduler.start()
+```
+## 项目配置
+在`config.py`中修改自己的数据库配置信息，然后分别运行`python get_proxy.py`和`python check_proxy.py`即可。
+## 自动化守护
+本次使用的自动化守护工具是`supervisor`，关于supervisor的教程，网上也非常多，大家可以参考，有时间再专门写一个教程。
+---
+至此整个项目都结束，大家可以愉快的爬虫了，爬虫一时爽，一直爬虫一直爽！
+本文中参考了比较多的[ProxyPool – 自动化代理池，爬取代理IP并进行测速筛选](https://www.uedbox.com/post/54864/)，在此特别感谢！
